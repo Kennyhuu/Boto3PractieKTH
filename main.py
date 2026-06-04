@@ -7,6 +7,7 @@ import priv_rtb
 import pub_rtb
 import webserver
 import webserver_sg
+import dynamoDB
 
 
 def configure_logging(level=logging.INFO):
@@ -76,4 +77,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    item = dynamoDB.dynamo_get_item()
