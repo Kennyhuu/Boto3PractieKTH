@@ -1,4 +1,7 @@
 import logging
+
+from dulwich.porcelain import for_each_ref
+
 import vpc
 import igw
 import pub_subnet
@@ -76,5 +79,3 @@ def main():
     logger.info(f"Web Server EC2 instance created with ID: {webserver_instance_id}")
 
 
-if __name__ == "__main__":
-    item = dynamoDB.dynamo_get_item()

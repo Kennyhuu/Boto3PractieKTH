@@ -39,3 +39,37 @@ def dynamo_get_item():
         }
     )
     return item;
+
+
+def dynamodb_get_all_items():
+    dynamodb = boto3.client('dynamodb')
+
+    items = []
+    response = dynamodb.scan(
+        TableName='Music',
+    )
+    items.extend(response['Items'])
+    while 'LastEvaluatedKey' in response:
+        response = dynamodb.scan(
+            TableName='Music',
+            ExclusiveStartKey=response['LastEvaluatedKey']
+        )
+        items.extend(response['Items'])
+
+    return items
+
+
+'''
+if __name__ == "__main__":
+
+    item = dynamodb_add_item()
+    
+    item = dynamodb_get_item()
+    
+    print(item)
+    
+    item = dynamoDB.dynamodb_get_all_items()
+    for i in item:
+        print(i)
+'''
+
