@@ -1,0 +1,123 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Challenge template - VPC with a private subnet, internet gateway, and EC2.
+
+Parameters:
+  LabVpcCidr:
+    Type: String
+    Default: 10.0.0.0/16
+
+  PrivateSubnetCidr:
+    Type: String
+    Default: 10.0.0.0/24
+  
+  AmazonLinuxAMIID:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+Resources:
+###########
+# VPC with Internet Gateway
+###########
+
+  LabVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref LabVpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: Khiem Challenge Lab VPC
+
+  IGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: ChallengeLab IGW
+
+  VPCtoIGWConnection:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref IGW
+      VpcId: !Ref LabVPC
+      
+###############################
+# Private Subnet & Route Table
+###############################
+      
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref LabVPC
+      MapPublicIpOnLaunch: false
+      CidrBlock: !Ref PrivateSubnetCidr
+      AvailabilityZone: !Select 
+        - 0
+        - !GetAZs 
+          Ref: AWS::Region
+      Tags:
+        - Key: Name
+          Value: Private Subnet
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref LabVPC
+      Tags:
+        - Key: Name
+          Value: Private Route Table
+
+  PrivateSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet
+      RouteTableId: !Ref PrivateRouteTable
+      
+###########
+# Security Group
+###########
+
+  ChallengeSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebserverSG
+      GroupDescription: Enable access to App via SSH
+      VpcId: !Ref LabVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: AllowSSH
+
+#######################
+# EC2 Instance
+#######################
+
+  KhiemEc2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      ImageId: !Ref AmazonLinuxAMIID
+      SubnetId: !Ref PrivateSubnet
+      SecurityGroupIds:
+        - !Ref ChallengeSecurityGroup
+      Tags:
+        - Key: Name
+          Value: KhiemEc2
+
+###########
+# Outputs
+###########
+
+Outputs:
+  LabVPCId:
+    Description: "The ID of the Lab VPC"
+    Value: !Ref LabVPC
+
+  ChallengeSecurityGroupId:
+    Description: "The ID of the custom security group"
+    Value: !Ref ChallengeSecurityGroup
